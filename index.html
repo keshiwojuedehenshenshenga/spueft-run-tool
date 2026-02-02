@@ -28,8 +28,6 @@
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-size: cover;
-            /* 暂时注释，测试图片是否显示 */
-            /* background-blend-mode: overlay; */
         }
         
         .header-bar {
@@ -133,7 +131,6 @@
             width: 100%;
             max-width: 480px;
             margin: 0 auto;
-            /* 解决导航栏重叠：添加顶部外边距 */
             margin-top: 100px;
             padding: 30px 25px 40px;
             min-height: calc(100vh - 90px);
@@ -166,7 +163,6 @@
             opacity: 1;
         }
 
-        /* 数字输入框步进器 黑色主题样式（核心新增） */
         input[type="number"] {
             -webkit-appearance: none;
             appearance: none;
@@ -220,10 +216,9 @@
             opacity: 1;
         }
         
-        /* ===== 新增：为爱发电按钮样式 ===== */
         .btn-love {
             width: 100%; padding: 12px;
-            background-color: #4A2B0F; /* 暖棕色，区分换算按钮，保持暗黑风格 */
+            background-color: #4A2B0F;
             color: #FFE4B5;
             border: none;
             border-radius: 0;
@@ -231,7 +226,7 @@
             font-weight: 500;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            margin-top: 10px; /* 与换算按钮间距 */
+            margin-top: 10px;
             opacity: 0.98;
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
@@ -275,7 +270,6 @@
             border-bottom: 1px solid rgba(80, 80, 80, 0.5);
         }
         
-        /* ===== 新增：弹窗样式 ===== */
         .modal-mask {
             position: fixed;
             top: 0;
@@ -286,12 +280,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999; /* 高于所有元素 */
-            display: none; /* 默认隐藏 */
+            z-index: 9999;
+            display: none;
         }
         .modal-content {
             width: 90%;
-            max-width: 400px; /* 适配移动端，限制最大宽度 */
+            max-width: 400px;
             background-color: rgba(30, 30, 30, 0.9);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -406,8 +400,6 @@
             </div>
 
             <button class="btn-convert" onclick="convertScore()">开始换算</button>
-            
-            <!-- ===== 新增：为爱发电按钮 ===== -->
             <button class="btn-love" onclick="openLoveModal()">为爱发电 ❤️</button>
 
             <div class="result-container" id="result-box">
@@ -430,22 +422,19 @@
         </div>
     </div>
 
-    <!-- ===== 新增：弹窗结构 ===== -->
+    
     <div class="modal-mask" id="love-modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeLoveModal()">×</button>
-            <!-- 替换 src 为你的实际图片地址（本地图片放 img 文件夹，或使用网络图片链接） -->
             <img src="img/love.png" alt="为爱发电图片" class="modal-img">
         </div>
     </div>
 
     <script>
-        // 核心常量
         const AIR_RESISTANCE_RATIO = 0.06;
         const WIND_COEFF_100 = 0.05;
         const WIND_COEFF_200 = 0.10;
 
-        // 成绩等级配置
         const SCORE_GRADES = {
             100: [
                 { min:0,max:9.39,name:"绝无可能",funnySentence:"检测到作弊行为，您已被禁赛！"},
@@ -529,7 +518,6 @@
             };
         }
 
-        // ✅【终极修复】核心环境修正公式，彻底解决符号颠倒问题
         function calculateEnvCorrection(originalTime, oEnv, tEnv) {
             const alt = oEnv.altitude || 0;
             const tAlt = tEnv.altitude || 0;
@@ -538,29 +526,23 @@
             const tTemp = tEnv.temperature || 20;
             const tHum = tEnv.humidity || 50;
 
-            // 大气压计算
             const P1 = 101325 * Math.pow(1 - (0.0065 * alt) / 288.15, 5.25588);
             const P2 = 101325 * Math.pow(1 - (0.0065 * tAlt) / 288.15, 5.25588);
             
-            // 饱和水汽压
             const VP1 = (hum/100) * 6.112 * Math.exp((17.67*temp)/(temp+243.5));
             const VP2 = (tHum/100) * 6.112 * Math.exp((17.67*tTemp)/(tTemp+243.5));
             
-            // 空气密度（核心物理量）
             const d1 = (P1*0.02896)/(8.314*(temp+273.15)) - (VP1*0.01802)/(8.314*(temp+273.15));
             const d2 = (P2*0.02896)/(8.314*(tTemp+273.15)) - (VP2*0.01802)/(8.314*(tTemp+273.15));
 
-            // ✅ 唯一正确公式：密度越低，修正值为负 → 成绩变快
             let timeAdjust = (Math.pow(d1/d2, 0.3) - 1) * originalTime * AIR_RESISTANCE_RATIO;
 
-            // 高海拔生理衰减（仅「原始高海拔→低海拔」生效）
             if(alt > tAlt && alt > 1000){
                 const over = alt - 1000;
                 const oxyFactor = Math.max(1 - (over/1000)*0.2, 0.6);
                 timeAdjust *= oxyFactor;
             }
 
-            // 修正幅度限制
             const maxAdjust = originalTime < 10 ? 0.15 : 0.30;
             const finalAdjust = Math.max(Math.min(timeAdjust, maxAdjust), -maxAdjust);
 
@@ -572,7 +554,6 @@
             };
         }
 
-        // 主换算函数
         function convertScore(){
             const eventType = parseInt(document.getElementById("event").value);
             const scoreStr = document.getElementById("original-score").value;
@@ -622,22 +603,17 @@
             box.scrollIntoView({behavior:"smooth"});
         }
 
-        // ===== 新增：弹窗控制函数 =====
-        // 打开弹窗
         function openLoveModal() {
             document.getElementById("love-modal").style.display = "flex";
-            // 禁止页面滚动
+
             document.body.style.overflow = "hidden";
         }
 
-        // 关闭弹窗
         function closeLoveModal() {
             document.getElementById("love-modal").style.display = "none";
-            // 恢复页面滚动
             document.body.style.overflow = "auto";
         }
 
-        // 点击弹窗遮罩层关闭弹窗
         document.getElementById("love-modal").addEventListener("click", function(e) {
             if (e.target === this) {
                 closeLoveModal();
