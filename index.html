@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短跑成绩校准换算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+        }
+        
+        body {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin: 0 !important;
+            background-color: #000000;
+            background-image: url("img/bolt.jpg");
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+            /* 暂时注释，测试图片是否显示 */
+            /* background-blend-mode: overlay; */
+        }
+        
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            max-width: 100vw;
+            height: 100px;
+            background-color: #1A1A1A;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            padding: 0 20px;
+            margin: 0 !important;
+            transform: none !important;
+        }
+        
+        .left-logo-container {
+            background-image: url("img/logo-left.png");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 300px;
+            height: 90px;
+            color: transparent;
+            margin-right: auto;
+        }
+        
+        .header-button-group {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            height: 100%;
+            display: flex;
+        }
+        
+        .header-btn {
+            flex: 1;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+            background-color: #1A1A1A;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.2;
+            word-wrap: break-word;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+        }
+        
+        .header-btn.active {
+            background-color: #0D0D0D;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.6);
+        }
+        
+        .header-btn:not(.active):hover {
+            background-color: #262626;
+        }
+        
+        .header-btn:first-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .dev-tip {
+            font-size: 12px;
+            margin-top: 6px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .css-loading-icon {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: css-spin 1.5s linear infinite;
+        }
+        
+        @keyframes css-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .glass-container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            /* 解决导航栏重叠：添加顶部外边距 */
+            margin-top: 100px;
+            padding: 30px 25px 40px;
+            min-height: calc(100vh - 90px);
+            border-radius: 0;
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            background-color: rgba(30, 30, 30, 0.6);
+        }
+        
+        .converter-container { width: 100%; }
+        .form-group { margin-bottom: 15px; }
+        label {
+            display: block; margin-bottom: 6px; color: #ffffff; font-weight: 50; font-size: 14px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        select, input {
+            width: 100%; padding: 10px 12px;
+            border: 1px solid #444444;
+            border-radius: 0;
+            font-size: 15px;
+            color: #E0E0E0;
+            outline: none;
+            transition: border-color 0.3s ease;
+            background-color: #333333;
+            opacity: 0.98;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+        }
+        select:focus, input:focus {
+            border-color: #555555;
+            opacity: 1;
+        }
+
+        /* 数字输入框步进器 黑色主题样式（核心新增） */
+        input[type="number"] {
+            -webkit-appearance: none;
+            appearance: none;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+            width: 20px;
+            height: 100%;
+            background-color: #2D2D2D;
+            border-left: 1px solid #444444;
+            cursor: pointer;
+        }
+        input[type="number"]::-webkit-inner-spin-button:hover {
+            background-color: #383838;
+        }
+        input[type="number"]::-moz-number-spin-box {
+            background-color: #2D2D2D;
+        }
+        input[type="number"]::-moz-number-spin-up,
+        input[type="number"]::-moz-number-spin-down {
+            background-color: #2D2D2D;
+            border-left: 1px solid #444444;
+            color: #E0E0E0;
+        }
+        input[type="number"]::-moz-number-spin-up:hover,
+        input[type="number"]::-moz-number-spin-down:hover {
+            background-color: #383838;
+        }
+        
+        .btn-convert {
+            width: 100%; padding: 12px;
+            background-color: #2D2D2D;
+            color: #ffffff;
+            border: none;
+            border-radius: 0;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+            opacity: 0.98;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
+        }
+        .btn-convert:hover {
+            background-color: #383838;
+            opacity: 1;
+        }
+        .result-container { margin-top: 25px; padding: 16px; display: none; }
+        .result-title {
+            color: #ffffff; font-size: 15px; margin-bottom: 12px; font-weight: 500; text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .range-value {
+            color: #ff6b6b; font-size: 26px; font-weight: 700; text-align: center; margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .detail-text {
+            text-align: center; color: #ffffff; font-size: 13px; margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9); line-height: 1.6;
+        }
+        .mid-score-number { color: #ff6b6b; font-weight: 700; }
+        .score-note {
+            text-align: center; color: #ffd700; font-size: 12px; margin-top: 10px; padding: 8px;
+            border: 1px dashed rgba(255, 215, 0, 0.3);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+            line-height: 1.8;
+        }
+        .tips {
+            color: #ffffff; font-size: 12px; text-align: center; margin-top: 12px; line-height: 1.5;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .note {
+            font-size: 12px; color: #E0E0E0; margin-top: 4px; font-style: italic;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .env-title {
+            text-align: center; color: #ffffff; font-size: 16px; margin: 20px 0 15px 0; font-weight: 500;
+            padding-bottom: 10px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid rgba(80, 80, 80, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <div class="left-logo-container">左侧LOGO</div>
+        <div class="header-button-group">
+            <button class="header-btn active">短跑成绩环境因素修正工具</button>
+            <button class="header-btn">
+                短跑成绩数据库
+                <span class="dev-tip">
+                    <span class="css-loading-icon"></span>
+                    正在开发
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <div class="glass-container">
+        <div class="converter-container">
+            <div class="form-group">
+                <label for="event">选择跑步项目</label>
+                <select id="event" autocomplete="off">
+                    <option value="100">100米（直道）</option>
+                    <option value="200">200米（弯道+直道）</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="original-score">原始短跑成绩（格式：10.09）</label>
+                <input type="text" id="original-score" placeholder="例如：10.09、10.90" required autocomplete="off">
+                <div class="note">仅支持正数，保留两位小数</div>
+            </div>
+
+            <div class="form-group">
+                <label for="original-wind">原始成绩对应的风速（m/s）</label>
+                <input type="number" id="original-wind" step="0.1" min="-5.0" max="5.0" placeholder="顺风为正，逆风为负，如+1.2、-0.5" required autocomplete="off">
+                <div class="note">国际田联有效记录风速≤+2.0 m/s，最大修正风速±5.0 m/s</div>
+            </div>
+
+            <div class="form-group">
+                <label for="target-wind">目标标准风速（m/s）</label>
+                <input type="number" id="target-wind" step="0.1" min="-5.0" max="5.0" placeholder="默认0（无风标准）" required autocomplete="off">
+            </div>
+
+            <div class="env-title">原始环境参数（成绩对应的现场环境）</div>
+            <div class="form-group">
+                <label for="original-altitude">原始海拔高度（m）</label>
+                <input type="number" id="original-altitude" step="1" min="0" max="5000" placeholder="例如：0（海平面）、1600（昆明）、2800（拉萨）" autocomplete="off">
+                <div class="note">≥1500m为高海拔，空气密度显著降低，助力成绩提升（含生理抵消）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="original-humidity">原始空气湿度（%）</label>
+                <input type="number" id="original-humidity" step="1" min="0" max="100" placeholder="例如：50（适宜）、85（潮湿）" autocomplete="off">
+                <div class="note">湿度越高，空气密度越大，阻力越大（影响弱于海拔/气温）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="original-temperature">原始环境气温（℃）</label>
+                <input type="number" id="original-temperature" step="1" min="-10" max="45" placeholder="例如：20（标准）、35（高温）" autocomplete="off">
+                <div class="note">气温越高，空气密度越小，阻力越小（0~35℃影响显著）</div>
+            </div>
+
+            <div class="env-title">目标统一环境参数（换算基准环境）</div>
+            <div class="form-group">
+                <label for="target-altitude">目标海拔高度（m）</label>
+                <input type="number" id="target-altitude" step="1" min="0" max="5000" placeholder="默认0（海平面标准）" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="target-humidity">目标空气湿度（%）</label>
+                <input type="number" id="target-humidity" step="1" min="0" max="100" placeholder="默认50（田径标准湿度）" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="target-temperature">目标环境气温（℃）</label>
+                <input type="number" id="target-temperature" step="1" min="-10" max="45" placeholder="默认20（田径标准气温）" autocomplete="off">
+            </div>
+
+            <button class="btn-convert" onclick="convertScore()">开始换算</button>
+
+            <div class="result-container" id="result-box">
+                <div class="result-title">标准条件参考成绩段</div>
+                <div class="range-value" id="score-range">——</div>
+                <div class="detail-text" id="reference-mid-score">参考中间值成绩：<span class="mid-score-number" id="mid-score-value">——</span> 秒</div>
+                <div class="score-note" id="score-rationality-note"></div>
+                <div class="detail-text" id="convert-base"></div>
+                <div class="detail-text" id="wind-correction"></div>
+                <div class="detail-text" id="env-correction"></div>
+                <div class="detail-text" id="final-explain"></div>
+            </div>
+
+            <div class="tips">
+                1. 换算依据：国际田联风速修正 + 真实竞技环境模型（空气阻力占比6%）<br>
+                2. 标准基准环境：海平面（0m）、20℃、50%湿度、无风（0m/s），成绩段浮动±0.02秒<br>
+                3. 结果仅作竞技参考，无官方记录效力<br>
+                © 2026 DS_Farmer 保留所有权利
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 核心常量
+        const AIR_RESISTANCE_RATIO = 0.06;
+        const WIND_COEFF_100 = 0.05;
+        const WIND_COEFF_200 = 0.10;
+
+        // 成绩等级配置
+        const SCORE_GRADES = {
+            100: [
+                { min:0,max:9.39,name:"绝无可能",funnySentence:"检测到作弊行为，您已被禁赛！"},
+                { min:9.40,max:9.49,name:"人类极限",funnySentence:"人类短跑的生理天花板，目前几乎无可能。"},
+                { min:9.50,max:9.57,name:"超世界纪录",funnySentence:"博尔特看了要走文化，你现在才是新王。"},
+                { min:9.58,max:9.58,name:"世界记录",funnySentence:"闪电之翼划过柏林夜空！"},
+                { min:9.59,max:9.69,name:"一人之下，万人之上",funnySentence:"仅次于神。"},
+                { min:9.70,max:9.74,name:"世界超顶尖运动员",funnySentence:"目前，全球只有五人达到了这里。这里，是所有短跑运动员的终极梦想！在这里，意味着你成为了人类历史上跑得最快的五个人之一。"},
+                { min:9.75,max:9.79,name:"世界顶尖运动员",funnySentence:"近几年的奥运会，夺冠轻轻松松！成绩历史前10以内。"},
+                { min:9.80,max:9.89,name:"大洲顶尖运动员",funnySentence:"大洲范围内的天花板，有机会奥运争冠了！只有极少数的天才可以达到这里。"},
+                { min:9.90,max:10.15,name:"国家顶尖运动员",funnySentence:"只要你不是在世界上都属天赋异禀的超级天才，这里是你努力结果的极限了。有机会进奥运会决赛。领奖台吗?...还差点。"},
+                { min:10.16,max:10.25,name:"国际级运动健将",funnySentence:"实力碾压绝大多数选手，出国比赛也能稳稳站稳脚跟，国内属于很顶级的运动员了。"},
+                { min:10.26,max:10.50,name:"国家级运动健将",funnySentence:"专业运动员的高阶水平，已经具备冲击国际赛场的实力。"},
+                { min:10.51,max:10.85,name:"一级运动员",funnySentence:"妥妥的专业选手，普通人连你的尾气都追不上。"},
+                { min:10.86,max:11.20,name:"二级运动员",funnySentence:"有扎实的专业基础，在业余赛场绝对是降维打击。微小天赋+很努力的结果。"},
+                { min:11.21,max:11.99,name:"三级运动员",funnySentence:"入门级专业水平，已经甩开了90%的业余跑者，跑步这件事上你是认真的！"},
+                { min:12.00,max:12.99,name:"业余爱好者",funnySentence:"业余爱好者水平，已经比普通人强很多了。如果你正在上小学或初中，没训练过，那么你已经具备一些天赋了。"},
+				{ min:13.00,max:15.99,name:"普通人",funnySentence:"普通人，下一个。"},
+                { min:16.00,max:Infinity,name:"残疾人",funnySentence:"咱别跑了，先养伤吧~"}
+            ],
+            200: [
+                { min:0,max:18.99,name:"绝无可能",funnySentence:"检测到作弊行为，您已被禁赛！"},
+                { min:19.00,max:19.09,name:"人类极限",funnySentence:"人类短跑的生理天花板，目前几乎无可能。"},
+                { min:19.10,max:19.18,name:"超世界纪录",funnySentence:"博尔特看了要走文化，你现在才是新王。"},
+                { min:19.19,max:19.19,name:"世界记录",funnySentence:"闪电之翼再次划过柏林夜空！"},
+                { min:19.20,max:19.25,name:"一人之下，万人之上",funnySentence:"仅次于神。"},
+                { min:19.26,max:19.30,name:"两人之下，万人之上",funnySentence:"仅次于布雷克+博尔特双子星。"},
+                { min:19.31,max:19.53,name:"世界超顶尖运动员",funnySentence:"人类历史200米最快前7人梯队。"},
+                { min:19.54,max:19.69,name:"世界顶尖运动员",funnySentence:"奥运领奖台常客，顶级职业选手。"},
+                { min:19.70,max:19.89,name:"大洲顶尖运动员",funnySentence:"大洲天花板，具备奥运争牌实力。"},
+                { min:19.90,max:20.30,name:"国家顶尖运动员",funnySentence:"国内顶级，可晋级奥运决赛。"},
+                { min:20.31,max:20.80,name:"国际级运动健将",funnySentence:"国内顶尖，具备国际比赛竞争力。"},
+                { min:20.81,max:21.80,name:"国家级运动健将",funnySentence:"专业高阶选手，潜力出众。"},
+                { min:21.81,max:22.60,name:"一级运动员",funnySentence:"标准专业选手，业余赛场无解。"},
+                { min:22.61,max:23.50,name:"二级运动员",funnySentence:"扎实专业功底，校队/市级主力。"},
+                { min:23.51,max:25.00,name:"三级运动员",funnySentence:"入门专业水平，远超普通跑者。"},
+                { min:25.01,max:28.00,name:"业余爱好者",funnySentence:"有训练基础，比普通人优秀。"},
+                { min:28.01,max:36.00,name:"普通人",funnySentence:"日常健康跑水平，无专业训练。"},
+                { min:36.01,max:Infinity,name:"休闲步行",funnySentence:"以健身为主，无需追求速度~"}
+            ]
+        };
+
+        window.onload = function(){
+            document.querySelectorAll("input").forEach(i=>i.value="");
+            document.getElementById("event").selectedIndex=0;
+            document.getElementById("result-box").style.display="none";
+        };
+
+        function getScoreRationalityNote(t,s){
+            for(let g of SCORE_GRADES[t]){
+                if(s>=g.min && s<=g.max){
+                    return `【${g.name}】${g.funnySentence}`;
+                }
+            }
+            return "【普通人】佛系跑步，快乐就好！";
+        }
+
+        function getScoreRange(s){
+            let mi=Math.max(s-0.02,0.01);
+            let ma=s+0.02;
+            return {
+                rangeText:`${mi.toFixed(2)}-${ma.toFixed(2)}`,
+                minScore:mi,
+                maxScore:ma
+            };
+        }
+
+        function parseScoreToSeconds(s,t){
+            const r=/^(\d+)(\.\d{1,2})?$/;
+            if(!r.test(s.trim())) return NaN;
+            let v=parseFloat(s);
+            return v>=(t==100?8:15)?parseFloat(v.toFixed(2)):NaN;
+        }
+
+        function calculateWindCorrection(s,ow,tw,t){
+            let c = t==100 ? WIND_COEFF_100 : WIND_COEFF_200;
+            let v = +(c*(ow-tw)).toFixed(4);
+            return {
+                correctionValue:v,
+                correctedSeconds:+(s+v).toFixed(4)
+            };
+        }
+
+        // ✅【终极修复】核心环境修正公式，彻底解决符号颠倒问题
+        function calculateEnvCorrection(originalTime, oEnv, tEnv) {
+            const alt = oEnv.altitude || 0;
+            const tAlt = tEnv.altitude || 0;
+            const temp = oEnv.temperature || 20;
+            const hum = oEnv.humidity || 50;
+            const tTemp = tEnv.temperature || 20;
+            const tHum = tEnv.humidity || 50;
+
+            // 大气压计算
+            const P1 = 101325 * Math.pow(1 - (0.0065 * alt) / 288.15, 5.25588);
+            const P2 = 101325 * Math.pow(1 - (0.0065 * tAlt) / 288.15, 5.25588);
+            
+            // 饱和水汽压
+            const VP1 = (hum/100) * 6.112 * Math.exp((17.67*temp)/(temp+243.5));
+            const VP2 = (tHum/100) * 6.112 * Math.exp((17.67*tTemp)/(tTemp+243.5));
+            
+            // 空气密度（核心物理量）
+            const d1 = (P1*0.02896)/(8.314*(temp+273.15)) - (VP1*0.01802)/(8.314*(temp+273.15));
+            const d2 = (P2*0.02896)/(8.314*(tTemp+273.15)) - (VP2*0.01802)/(8.314*(tTemp+273.15));
+
+            // ✅ 唯一正确公式：密度越低，修正值为负 → 成绩变快
+            let timeAdjust = (Math.pow(d1/d2, 0.3) - 1) * originalTime * AIR_RESISTANCE_RATIO;
+
+            // 高海拔生理衰减（仅「原始高海拔→低海拔」生效）
+            if(alt > tAlt && alt > 1000){
+                const over = alt - 1000;
+                const oxyFactor = Math.max(1 - (over/1000)*0.2, 0.6);
+                timeAdjust *= oxyFactor;
+            }
+
+            // 修正幅度限制
+            const maxAdjust = originalTime < 10 ? 0.15 : 0.30;
+            const finalAdjust = Math.max(Math.min(timeAdjust, maxAdjust), -maxAdjust);
+
+            return {
+                originalDensity: parseFloat(d1.toFixed(4)),
+                targetDensity: parseFloat(d2.toFixed(4)),
+                correctionValue: parseFloat(-finalAdjust.toFixed(4)),
+                correctedSeconds: parseFloat((originalTime - finalAdjust).toFixed(4))
+            };
+        }
+
+        // 主换算函数
+        function convertScore(){
+            const eventType = parseInt(document.getElementById("event").value);
+            const scoreStr = document.getElementById("original-score").value;
+            const ow = parseFloat(document.getElementById("original-wind").value);
+            const tw = parseFloat(document.getElementById("target-wind").value) || 0;
+
+            const originalSec = parseScoreToSeconds(scoreStr, eventType);
+            if(isNaN(originalSec)){
+                alert("请输入正确格式：100米≥8.00，200米≥15.00，仅支持数字与1-2位小数");
+                return;
+            }
+            if(isNaN(ow)||ow<-5||ow>5||isNaN(tw)||tw<-5||tw>5){
+                alert("风速必须在 -5.0 ~ 5.0 之间");
+                return;
+            }
+
+            const oEnv = {
+                altitude: parseFloat(document.getElementById("original-altitude").value)||0,
+                temperature: parseFloat(document.getElementById("original-temperature").value)||20,
+                humidity: parseFloat(document.getElementById("original-humidity").value)||50
+            };
+            const tEnv = {
+                altitude: parseFloat(document.getElementById("target-altitude").value)||0,
+                temperature: parseFloat(document.getElementById("target-temperature").value)||20,
+                humidity: parseFloat(document.getElementById("target-humidity").value)||50
+            };
+
+            const windRes = calculateWindCorrection(originalSec, ow, tw, eventType);
+            const envRes = calculateEnvCorrection(windRes.correctedSeconds, oEnv, tEnv);
+            
+            const finalSec = Math.max(envRes.correctedSeconds, 0.01);
+            const finalScore = parseFloat(finalSec.toFixed(2));
+            const range = getScoreRange(finalSec);
+            const mid = ((range.minScore+range.maxScore)/2).toFixed(2);
+            const note = getScoreRationalityNote(eventType, finalScore);
+
+            const box = document.getElementById("result-box");
+            box.style.display = "block";
+            document.getElementById("score-range").innerText = range.rangeText;
+            document.getElementById("mid-score-value").innerText = mid;
+            document.getElementById("score-rationality-note").innerText = note;
+            document.getElementById("convert-base").innerText = `${eventType}米 | 原始成绩：${originalSec}秒 | 修正后成绩：${finalScore}秒`;
+            document.getElementById("wind-correction").innerText = `风速修正：${ow}m/s → ${tw}m/s | 修正值：${windRes.correctionValue>=0?"+":""}${windRes.correctionValue}`;
+            document.getElementById("env-correction").innerText = `密度修正：${envRes.originalDensity}→${envRes.targetDensity} | 修正值：${envRes.correctionValue>=0?"+":""}${envRes.correctionValue}`;
+            document.getElementById("final-explain").innerText = "正数=变慢，负数=变快 | 高海拔密度低，阻力小，成绩更快";
+            
+            box.scrollIntoView({behavior:"smooth"});
+        }
+    </script>
+</body>
+</html>
